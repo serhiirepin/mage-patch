@@ -256,7 +256,7 @@ class PatchMage {
         echo 'Magento version: '.$mageEdition.' '.$mageVersion.PHP_EOL;
         
         $appliedPatches = array();
-        
+        echo $mageEdition;
         $patches = $this->_getAvailablePathList($mageEdition);
         
         if ($this->_allowedPatches) {
