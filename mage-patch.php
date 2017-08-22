@@ -240,7 +240,7 @@ class PatchMage {
      */
     protected function _getAvailablePathList ($mageEdition)
     {
-        echo mageEdition;
+        echo $mageEdition;
         return $this->_patchData['patches-'.$mageEdition];
     }
     
