@@ -258,9 +258,6 @@ class PatchMage {
         $appliedPatches = array();
         
         $patches = $this->_getAvailablePathList($mageEdition);
-        echo '<pre>';
-        echo print_r($patches);
-        echo '</pre>';
         if ($this->_allowedPatches) {
             $patches = array_intersect_key($patches, array_flip($this->_allowedPatches));
         }
