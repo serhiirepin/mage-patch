@@ -97,6 +97,7 @@ class PatchMage {
     protected function _downloadPatch($dir, $patchFile)
     {
         $url = rtrim($this->_patchData['baseUrl'], '/').'/'.$patchFile;
+        echo $url;
         $patchFilename = $dir.$patchFile;
         
         $ch = curl_init();
