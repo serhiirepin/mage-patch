@@ -348,7 +348,7 @@ function extractParams($name, &$params) {
 }
 
 if (!$configUrl = extractParams('--config', $dirs)) {
-    $configUrl = 'https://raw.githubusercontent.com/sutunam/mage-patch/master/config.json';
+    $configUrl = 'https://raw.githubusercontent.com/serhiirepin/mage-patch/master/config.json';
 }
 
 $patch = new PatchMage($configUrl);
