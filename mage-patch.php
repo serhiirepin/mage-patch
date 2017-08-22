@@ -270,7 +270,7 @@ class PatchMage {
                 continue;
             }
             
-            echo PHP_EOL.'Apply patch file: '.$patchFile.PHP_EOL;
+            echo 'Apply patch file: '.$patchFile.PHP_EOL;
             
             $this->_downloadPatch($dir, $patchFile);
             
@@ -279,7 +279,7 @@ class PatchMage {
                 $appliedPatches[] = $patch;
             } catch (Exception $e) {
                 if ($this->_continueOnError) {
-                    echo "Error applying the patch ".$patch.PHP_EOL;
+                    echo PHP_EOL."Error applying the patch ".$patch.PHP_EOL;
                 }
             }
             
