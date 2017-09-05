@@ -7,7 +7,7 @@ Help to apply multiple **Magento patches** to multiple Magento installations.
 ## Usage
 
 ```
-curl https://raw.serhiirepin.com/sutunam/mage-patch/master/mage-patch.php | php -- [options ...] dirs ...
+curl https://raw.githubusercontent.com/serhiirepin/mage-patch/master/mage-patch.php | php -- [options ...] dirs ...
 
 dirs:
     Magento directory where the patches will be applied
@@ -44,24 +44,24 @@ You don't need to care about an error: if a patch is not applicable, the Magento
 
 Apply all availables patches to the Magento installion in `./htdocs` :
 ```
-curl https://raw.serhiirepin.com/sutunam/mage-patch/master/mage-patch.php | php -- ./htdocs
+curl https://raw.githubusercontent.com/serhiirepin/mage-patch/master/mage-patch.php | php -- ./htdocs
 ```
 
 Apply all availables patches to the Magento installion in `./htdocs`, patch scripts stay quiet, and it does not stop on error :
 ```
-curl https://raw.serhiirepin.com/sutunam/mage-patch/master/mage-patch.php | php -- --quiet 1 --continueOnError 1 ./htdocs
+curl https://raw.githubusercontent.com/serhiirepin/mage-patch/master/mage-patch.php | php -- --quiet 1 --continueOnError 1 ./htdocs
 ```
 
 Same as before, but it applies only the patch SUPEE-6285 :
 ```
-curl https://raw.serhiirepin.com/sutunam/mage-patch/master/mage-patch.php | php -- --quiet 1 --continueOnError 1 --patches SUPEE-6285 ./htdocs
+curl https://raw.githubusercontent.com/serhiirepin/mage-patch/master/mage-patch.php | php -- --quiet 1 --continueOnError 1 --patches SUPEE-6285 ./htdocs
 ```
 
 
 
 Apply the SUPEE-5344 patch to all Magento installions in `/home/*/htdocs` by using the owners of the directories (**this should be run as root** and the `su` command must be available):
 ```
-curl https://raw.serhiirepin.com/sutunam/mage-patch/master/mage-patch.php | php -- --patches SUPEE-5344 --su _ /home/*/htdocs
+curl https://raw.githubusercontent.com/serhiirepin/mage-patch/master/mage-patch.php | php -- --patches SUPEE-5344 --su _ /home/*/htdocs
 ```
 
 
