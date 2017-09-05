@@ -156,38 +156,32 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2329 | EE_1.13.0.2 | v1 | 4db1f7944d277194c8f3a6c483a84c640135a9b1 | Fri Oct 18 14:39:56 2013 -0700 | v1.13.0.2..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git app/code/core/Enterprise/Catalog/Model/Product/Attribute/Backend/Urlkey.php app/code/core/Enterprise/Catalog/Model/Product/Attribute/Backend/Urlkey.php
+index 80602f5..aef9e15 100644
+--- app/code/core/Enterprise/Catalog/Model/Product/Attribute/Backend/Urlkey.php
++++ app/code/core/Enterprise/Catalog/Model/Product/Attribute/Backend/Urlkey.php
+@@ -170,14 +170,18 @@ class Enterprise_Catalog_Model_Product_Attribute_Backend_Urlkey
+      */
+     protected function _isAvailableUrl($object)
+     {
++        // When product is reassigning to another website (store) URL key can't be copied because it must remain unique
++        if ($object->getOrigData('store_id') != $object->getStoreId()) {
++            return true;
++        }
+         $select = $this->_connection->select()
+             ->from($this->getAttribute()->getBackendTable(), array('entity_id', 'store_id'))
+             ->where('value = ?', $object->getUrlKey())
+             ->limit(1);
+         $row = $this->_connection->fetchRow($select);
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+-        // we should allow save same url key for product in current store view
+-        // but not allow save existing url key in current store view from another store view
++        // Allow re-saving same url key for product in current store view
++        // but prevent saving existing url key in current store view from another store view
+         if (empty($row)) {
+             return true;
+         } elseif ($object->getId() && $object->getStoreId() !== null

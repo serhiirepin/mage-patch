@@ -156,38 +156,49 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+ | _ |  |  | n/a | PATCH_SUPEE-4776_EE_1.14.1.0_v1.patch
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git downloader/lib/Mage/Archive/Tar.php downloader/lib/Mage/Archive/Tar.php
+index df20d89..e9d4dff 100644
+--- downloader/lib/Mage/Archive/Tar.php
++++ downloader/lib/Mage/Archive/Tar.php
+@@ -99,12 +99,18 @@ class Mage_Archive_Tar extends Mage_Archive_Abstract implements Mage_Archive_Int
+     /**
+      * Returns string that is used for tar's header parsing
+      *
++     * Format codes were changed in 5.5.0 version. See http://php.net/manual/en/function.unpack.php
++     *
+      * @return string
+      */
+     protected static final function _getFormatParseHeader()
+     {
+-        return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
++        if (version_compare(phpversion(), '5.5.0', '<') === true) {
++            return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
+             . 'a32uname/a32gname/a8devmajor/a8devminor/a155prefix/a12closer';
++        }
++        return 'Z100name/Z8mode/Z8uid/Z8gid/Z12size/Z12mtime/Z8checksum/Z1type/Z100symlink/Z6magic/Z2version/'
++            . 'Z32uname/Z32gname/Z8devmajor/Z8devminor/Z155prefix/Z12closer';
+     }
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
+     /**
+diff --git lib/Mage/Archive/Tar.php lib/Mage/Archive/Tar.php
+index a88acfc..3403c91 100644
+--- lib/Mage/Archive/Tar.php
++++ lib/Mage/Archive/Tar.php
+@@ -103,8 +103,12 @@ class Mage_Archive_Tar extends Mage_Archive_Abstract implements Mage_Archive_Int
+      */
+     protected static final function _getFormatParseHeader()
+     {
+-        return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
++        if (version_compare(phpversion(), '5.5.0', '<') === true) {
++            return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
+             . 'a32uname/a32gname/a8devmajor/a8devminor/a155prefix/a12closer';
++        }
++        return 'Z100name/Z8mode/Z8uid/Z8gid/Z12size/Z12mtime/Z8checksum/Z1type/Z100symlink/Z6magic/Z2version/'
++        . 'Z32uname/Z32gname/Z8devmajor/Z8devminor/Z155prefix/Z12closer';
+     }
  
-         if ($this->_errstr !== null || !$result) {
+     /**

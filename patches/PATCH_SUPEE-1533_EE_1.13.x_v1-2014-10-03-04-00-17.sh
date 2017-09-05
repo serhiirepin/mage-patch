@@ -156,38 +156,34 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-1533 | EE_1.13 | v1 | _ | n/a | SUPEE-1533_EE_1.13_v1.patch
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
+diff --git app/code/core/Mage/Adminhtml/Block/Dashboard/Graph.php app/code/core/Mage/Adminhtml/Block/Dashboard/Graph.php
+index c698108..6e256bb 100644
+--- app/code/core/Mage/Adminhtml/Block/Dashboard/Graph.php
++++ app/code/core/Mage/Adminhtml/Block/Dashboard/Graph.php
+@@ -444,7 +444,7 @@ class Mage_Adminhtml_Block_Dashboard_Graph extends Mage_Adminhtml_Block_Dashboar
              }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+             return self::API_URL . '?' . implode('&', $p);
+         } else {
+-            $gaData = urlencode(base64_encode(serialize($params)));
++            $gaData = urlencode(base64_encode(json_encode($params)));
+             $gaHash = Mage::helper('adminhtml/dashboard_data')->getChartDataHash($gaData);
+             $params = array('ga' => $gaData, 'h' => $gaHash);
+             return $this->getUrl('*/*/tunnel', array('_query' => $params));
+diff --git app/code/core/Mage/Adminhtml/controllers/DashboardController.php app/code/core/Mage/Adminhtml/controllers/DashboardController.php
+index eebb471..f9cb8d2 100644
+--- app/code/core/Mage/Adminhtml/controllers/DashboardController.php
++++ app/code/core/Mage/Adminhtml/controllers/DashboardController.php
+@@ -92,7 +92,8 @@ class Mage_Adminhtml_DashboardController extends Mage_Adminhtml_Controller_Actio
+         if ($gaData && $gaHash) {
+             $newHash = Mage::helper('adminhtml/dashboard_data')->getChartDataHash($gaData);
+             if ($newHash == $gaHash) {
+-                if ($params = unserialize(base64_decode(urldecode($gaData)))) {
++                $params = json_decode(base64_decode(urldecode($gaData)), true);
++                if ($params) {
+                     $response = $httpClient->setUri(Mage_Adminhtml_Block_Dashboard_Graph::API_URL)
+                             ->setParameterGet($params)
+                             ->setConfig(array('timeout' => 5))

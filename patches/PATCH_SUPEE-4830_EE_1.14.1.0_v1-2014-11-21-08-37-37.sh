@@ -156,38 +156,20 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-4830 | EE_1.14.1.0 | v1 | 9d7f3612eb095255580bca8e05bd0c2a06f4e794 | Tue Nov 18 13:49:14 2014 +0200 | v1.14.1.0..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
+diff --git app/code/core/Mage/ConfigurableSwatches/Helper/Productimg.php app/code/core/Mage/ConfigurableSwatches/Helper/Productimg.php
+index 9d2d0e1..7613d00 100644
+--- app/code/core/Mage/ConfigurableSwatches/Helper/Productimg.php
++++ app/code/core/Mage/ConfigurableSwatches/Helper/Productimg.php
+@@ -227,6 +227,8 @@ class Mage_ConfigurableSwatches_Helper_Productimg extends Mage_Core_Helper_Abstr
+             $fileExt = self::SWATCH_FILE_EXT;
          }
  
-         if ($this->_errstr !== null || !$result) {
++        // normalize to all lower case so that value can be used as array key below
++        $value = Mage_ConfigurableSwatches_Helper_Data::normalizeKey($value);
+         $defaultValue = $value; // default to no fallback value
+         if ($object instanceof Mage_Catalog_Model_Layer_Filter_Item) { // fallback for swatches loaded for nav filters
+             $source = $object->getFilter()->getAttributeModel()->getFrontend()->getAttribute()->getSource();

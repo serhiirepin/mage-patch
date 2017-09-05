@@ -156,38 +156,28 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2518 | EE_1.13.0.2 | v1 | e6f2d2354843b1ca69988a44de1761ce180e746c | Thu Nov 21 12:44:53 2013 +0200 | v1.13.0.2..SUPEE-2518
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
+diff --git app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php
+index 9e8d6be..b106d09 100644
+--- app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php
++++ app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php
+@@ -197,11 +197,11 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
+     public function getCurrentPath()
+     {
+         if (!$this->_currentPath) {
+-            $currentPath = $this->getStorageRoot();
+-            $path = $this->_getRequest()->getParam($this->getTreeNodeName());
+-            if ($path) {
+-                $path = $this->convertIdToPath($path);
+-                if (is_dir($path)) {
++            $currentPath = realpath($this->getStorageRoot());
++            $node = $this->_getRequest()->getParam($this->getTreeNodeName());
++            if ($node) {
++                $path = realpath($this->convertIdToPath($node));
++                if (is_dir($path) && false !== stripos($path, $currentPath)) {
+                     $currentPath = $path;
+                 }
              }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {

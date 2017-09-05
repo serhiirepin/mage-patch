@@ -156,38 +156,20 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-4587 | EE_1.14.0.1 | v1 | 8781eff88cce798f064b493e35f6b9e97fb016a5 | Thu Oct 16 15:47:14 2014 -0700 | v1.14.0.1..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+diff --git app/code/core/Mage/Captcha/Model/Observer.php app/code/core/Mage/Captcha/Model/Observer.php
+index f3d5c4d..681223f 100755
+--- app/code/core/Mage/Captcha/Model/Observer.php
++++ app/code/core/Mage/Captcha/Model/Observer.php
+@@ -65,7 +65,7 @@ class Mage_Captcha_Model_Observer
+         $formId = 'user_login';
+         $captchaModel = Mage::helper('captcha')->getCaptcha($formId);
+         $controller = $observer->getControllerAction();
+-        $loginParams = $controller->getRequest()->getPost('login');
++        $loginParams = $controller->getRequest()->getPost('login', array());
+         $login = array_key_exists('username', $loginParams) ? $loginParams['username'] : null;
+         if ($captchaModel->isRequired($login)) {
+             $word = $this->_getCaptchaString($controller->getRequest(), $formId);

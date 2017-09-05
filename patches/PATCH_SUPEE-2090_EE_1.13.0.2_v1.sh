@@ -156,38 +156,81 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2090 | EE_1.13.0.2 | v1 | 6563cdaaf9119a5e15feeecb2faf27aaaba512db | Thu Oct 3 12:24:44 2013 +0300 | v1.13.0.2..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
+diff --git app/code/core/Enterprise/Index/Model/Resource/Lock/Resource.php app/code/core/Enterprise/Index/Model/Resource/Lock/Resource.php
+index b91860e..d79a66c 100644
+--- app/code/core/Enterprise/Index/Model/Resource/Lock/Resource.php
++++ app/code/core/Enterprise/Index/Model/Resource/Lock/Resource.php
+@@ -34,6 +34,14 @@
+ class Enterprise_Index_Model_Resource_Lock_Resource extends Mage_Core_Model_Resource
+ {
+     /**
++     * Constructor
++     */
++    public function __construct()
++    {
++        $this->_connections = Mage::getSingleton('core/resource')->getConnections();
++    }
++
++    /**
+      * Creates a connection to resource whenever needed
+      *
+      * @param string $name
+@@ -68,10 +76,21 @@ class Enterprise_Index_Model_Resource_Lock_Resource extends Mage_Core_Model_Reso
+             return $this->_connections[$origName];
          }
  
-         if ($this->_errstr !== null || !$result) {
++        $origConfigParams = $connConfig->asArray();
+         if ($extendConfigWith) {
+             $connConfig->extend(Mage::getConfig()->getResourceConnectionConfig($extendConfigWith), true);
+         }
+ 
++        $configDiff = array_diff_assoc($connConfig->asArray(), $origConfigParams);
++        if (!$configDiff) {
++            $index = $name;
++            $origName = $connConfig->getParent()->getName();
++            if (isset($this->_connections[$origName])) {
++                $this->_connections[$index] = $this->_connections[$origName];
++                return $this->_connections[$origName];
++            }
++        }
++
+         $connection = $this->_newConnection((string)$connConfig->type, $connConfig);
+         if ($connection) {
+             if (Mage::app()->getIsCacheLocked()) {
+diff --git app/code/core/Mage/Core/Model/Resource.php app/code/core/Mage/Core/Model/Resource.php
+index d96ec1c..d8952e9 100644
+--- app/code/core/Mage/Core/Model/Resource.php
++++ app/code/core/Mage/Core/Model/Resource.php
+@@ -125,6 +125,16 @@ class Mage_Core_Model_Resource
+     }
+ 
+     /**
++     * Get Instances of actual connections
++     *
++     * @return array
++     */
++    public function getConnections()
++    {
++        return $this->_connections;
++    }
++
++    /**
+      * Retrieve connection adapter class name by connection type
+      *
+      * @param string $type  the connection type
+diff --git app/etc/config.xml app/etc/config.xml
+index 3b90ef7..49ceeee 100644
+--- app/etc/config.xml
++++ app/etc/config.xml
+@@ -41,6 +41,7 @@
+                     <initStatements>SET NAMES utf8</initStatements>
+                     <type>pdo_mysql</type>
+                     <active>0</active>
++                    <persistent>0</persistent>
+                 </connection>
+             </default_setup>
+             <default_write>

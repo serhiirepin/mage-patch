@@ -156,38 +156,24 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2988 | EE_1.13.0.2 | v1 | 1488fb7b7bda3ed3ef4b834dcd7272257983d40a | Wed Apr 9 11:49:52 2014 +0300 | v1.13.0.2..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git app/code/core/Mage/CatalogRule/Model/Observer.php app/code/core/Mage/CatalogRule/Model/Observer.php
+index 0f033a4..9c3355a 100644
+--- app/code/core/Mage/CatalogRule/Model/Observer.php
++++ app/code/core/Mage/CatalogRule/Model/Observer.php
+@@ -199,9 +199,9 @@ class Mage_CatalogRule_Model_Observer
+      */
+     public function dailyCatalogUpdate($observer)
+     {
+-        /** @var $resource Mage_CatalogRule_Model_Resource_Rule */
+-        $resource = Mage::getResourceSingleton('catalogrule/rule');
+-        $resource->applyAllRules();
++        /** @var $model Mage_CatalogRule_Model_Rule */
++        $model = Mage::getSingleton('catalogrule/rule');
++        $model->applyAll();
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+         return $this;
+     }

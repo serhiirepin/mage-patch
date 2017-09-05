@@ -2,7 +2,7 @@
 # Patch apllying tool template
 # v0.1.2
 # (c) Copyright 2013. Magento Inc.
-#
+# 
 # DO NOT CHANGE ANY LINE IN THIS FILE.
 
 # 1. Check required system tools
@@ -156,38 +156,48 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+
+SUPEE-2776 | EE_1.13.1.0 | v1 | e8239951fd511395d9e6c8c20898341762540495 | Tue Jan 21 16:32:08 2014 -0800 | v1.13.1.0..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git app/code/core/Mage/Wishlist/Controller/Abstract.php app/code/core/Mage/Wishlist/Controller/Abstract.php
+index f6dcb5c..79f0b9c 100644
+--- app/code/core/Mage/Wishlist/Controller/Abstract.php
++++ app/code/core/Mage/Wishlist/Controller/Abstract.php
+@@ -73,11 +73,6 @@ abstract class Mage_Wishlist_Controller_Abstract extends Mage_Core_Controller_Fr
+      */
+     public function allcartAction()
+     {
+-        if (!$this->_validateFormKey()) {
+-            $this->_forward('noRoute');
+-            return;
+-        }
+-
+         $wishlist   = $this->_getWishlist();
+         if (!$wishlist) {
+             $this->_forward('noRoute');
+@@ -95,7 +90,9 @@ abstract class Mage_Wishlist_Controller_Abstract extends Mage_Core_Controller_Fr
+                 ->setVisibilityFilter();
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
+         $qtysString = $this->getRequest()->getParam('qty');
+-        $qtys =  array_filter(json_decode($qtysString), 'strlen');
++        if (isset($qtysString)) {
++            $qtys =  array_filter(json_decode($qtysString), 'strlen');
++        }
  
-         if ($this->_errstr !== null || !$result) {
+         foreach ($collection as $item) {
+             /** @var Mage_Wishlist_Model_Item */
+diff --git app/design/frontend/base/default/template/wishlist/email/items.phtml app/design/frontend/base/default/template/wishlist/email/items.phtml
+index a5e1dd2..7d02f5f 100644
+--- app/design/frontend/base/default/template/wishlist/email/items.phtml
++++ app/design/frontend/base/default/template/wishlist/email/items.phtml
+@@ -38,7 +38,7 @@
+             <p align="center" style="font-size:12px;"><a href="<?php echo $this->getProductUrl($_product) ?>" style="color:#203548;"><strong><?php echo $this->escapeHtml($_product->getName()) ?></strong></a></p>
+             <?php if($this->hasDescription($item)): ?><p align="center" style="font-size:12px;"><?php echo $this->__('Comment') ?>:<br /><?php echo $this->getEscapedDescription($item) ?></p><?php endif; ?>
+             <p align="center" style="font-size:12px;"><a href="<?php echo $this->getProductUrl($_product) ?>" style="color:#1E7EC8;"><?php echo $this->__('View Product') ?></a> <small>
+-            <?php if ($_product->getIsSalable()): ?>|</small> <a href="<?php echo $this->getAddToCartUrl($_product) ?>" style="color:#1E7EC8;"><strong><?php echo $this->__('Add to Cart') ?></strong></a><?php endif;?>
++            <?php if ($_product->getIsSalable()): ?>|</small> <a href="<?php echo $this->_getHelper()->getSharedAddToCartUrl($item) ?>" style="color:#1E7EC8;"><strong><?php echo $this->__('Add to Cart') ?></strong></a><?php endif;?>
+             </p></td>
+         <?php if ($i%3!=0): ?>
+             <td width="2%"></td>

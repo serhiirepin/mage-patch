@@ -156,38 +156,44 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-4829 | EE_1.14.1.0 | v1 | 83c162e03b0ff8e34bb7eab884cbc034c1546dd5 | Tue Nov 18 13:45:28 2014 +0200 | v1.14.1.0..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git app/code/core/Mage/ConfigurableSwatches/Block/Catalog/Media/Js/Abstract.php app/code/core/Mage/ConfigurableSwatches/Block/Catalog/Media/Js/Abstract.php
+index fe53db9..b0d2fd7 100644
+--- app/code/core/Mage/ConfigurableSwatches/Block/Catalog/Media/Js/Abstract.php
++++ app/code/core/Mage/ConfigurableSwatches/Block/Catalog/Media/Js/Abstract.php
+@@ -35,6 +35,13 @@ abstract class Mage_ConfigurableSwatches_Block_Catalog_Media_Js_Abstract extends
+     abstract public function getProducts();
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
+     /**
++     * A list of blocks that contain products. Used to get the current display mode (grid/list).
++     *
++     * @var array
++     */
++    protected $_productListBlocks = array('product_list', 'search_result_list');
++
++    /**
+      * json encode image fallback array
+      *
+      * @param array $imageFallback
+@@ -69,11 +76,13 @@ abstract class Mage_ConfigurableSwatches_Block_Catalog_Media_Js_Abstract extends
+         $products = $this->getProducts();
+ 
+         if ($keepFrame === null) {
+-            $listBlock = $this->getLayout()->getBlock('product_list');
+-            if ($listBlock && $listBlock->getMode() == 'grid') {
+-                $keepFrame = true;
+-            } else {
+-                $keepFrame = false;
++            $keepFrame = false;
++            foreach ($this->_productListBlocks as $blockName) {
++                $listBlock = $this->getLayout()->getBlock($blockName);
++                if ($listBlock && $listBlock->getMode() == 'grid') {
++                    $keepFrame = true;
++                    break;
++                }
+             }
          }
  
-         if ($this->_errstr !== null || !$result) {

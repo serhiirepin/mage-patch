@@ -156,38 +156,74 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-4776 | EE_1.14.0.1 | v1 | be74e77758311ebff974aa433f9d48e13b0658bc | Tue Nov 11 19:09:42 2014 +0200 | v1.14.0.1..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git app/code/core/Mage/Core/Helper/Abstract.php app/code/core/Mage/Core/Helper/Abstract.php
+index b3f43c7..29c124d 100755
+--- app/code/core/Mage/Core/Helper/Abstract.php
++++ app/code/core/Mage/Core/Helper/Abstract.php
+@@ -235,7 +235,13 @@ abstract class Mage_Core_Helper_Abstract
+      */
+     public function removeTags($html)
+     {
+-        $html = preg_replace("# <(?![/a-z]) | (?<=\s)>(?![a-z]) #exi", "htmlentities('$0')", $html);
++        $html = preg_replace_callback(
++            "# <(?![/a-z]) | (?<=\s)>(?![a-z]) #xi",
++            function ($matches) {
++                return htmlentities($matches[0]);
++            },
++            $html
++        );
+         $html =  strip_tags($html);
+         return htmlspecialchars_decode($html);
+     }
+diff --git downloader/lib/Mage/Archive/Tar.php downloader/lib/Mage/Archive/Tar.php
+index 8322963..3c21709 100644
+--- downloader/lib/Mage/Archive/Tar.php
++++ downloader/lib/Mage/Archive/Tar.php
+@@ -99,12 +99,18 @@ class Mage_Archive_Tar extends Mage_Archive_Abstract implements Mage_Archive_Int
+     /**
+      * Returns string that is used for tar's header parsing
+      *
++     * Format codes were changed in 5.5.0 version. See http://php.net/manual/en/function.unpack.php
++     *
+      * @return string
+      */
+     protected static final function _getFormatParseHeader()
+     {
+-        return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
++        if (version_compare(phpversion(), '5.5.0', '<') === true) {
++            return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
+             . 'a32uname/a32gname/a8devmajor/a8devminor/a155prefix/a12closer';
++        }
++        return 'Z100name/Z8mode/Z8uid/Z8gid/Z12size/Z12mtime/Z8checksum/Z1type/Z100symlink/Z6magic/Z2version/'
++        . 'Z32uname/Z32gname/Z8devmajor/Z8devminor/Z155prefix/Z12closer';
+     }
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
+     /**
+diff --git lib/Mage/Archive/Tar.php lib/Mage/Archive/Tar.php
+index a88acfc..261e524 100644
+--- lib/Mage/Archive/Tar.php
++++ lib/Mage/Archive/Tar.php
+@@ -99,12 +99,18 @@ class Mage_Archive_Tar extends Mage_Archive_Abstract implements Mage_Archive_Int
+     /**
+      * Returns string that is used for tar's header parsing
+      *
++     * Format codes were changed in 5.5.0 version. See http://php.net/manual/en/function.unpack.php
++     *
+      * @return string
+      */
+     protected static final function _getFormatParseHeader()
+     {
+-        return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
++        if (version_compare(phpversion(), '5.5.0', '<') === true) {
++            return 'a100name/a8mode/a8uid/a8gid/a12size/a12mtime/a8checksum/a1type/a100symlink/a6magic/a2version/'
+             . 'a32uname/a32gname/a8devmajor/a8devminor/a155prefix/a12closer';
++        }
++        return 'Z100name/Z8mode/Z8uid/Z8gid/Z12size/Z12mtime/Z8checksum/Z1type/Z100symlink/Z6magic/Z2version/'
++        . 'Z32uname/Z32gname/Z8devmajor/Z8devminor/Z155prefix/Z12closer';
+     }
  
-         if ($this->_errstr !== null || !$result) {
+     /**

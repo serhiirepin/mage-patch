@@ -156,38 +156,76 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2677 | EE_1.13.0.2 | v2 | d20e6763cd0df70c4ac6e418c9775a1ff0f2618f | Tue Jan 14 17:49:25 2014 +0200 | v1.13.0.2..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
+diff --git app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php
+index 9e8d6be..0ac6a11 100644
+--- app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php
++++ app/code/core/Mage/Cms/Helper/Wysiwyg/Images.php
+@@ -49,6 +49,11 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
+      */
+     protected $_storeId = null;
+ 
++    /**
++     * Images Storage root directory
++     * @var string
++     */
++    protected $_storageRoot;
+ 
+     /**
+      * Set a specified store ID value
+@@ -68,8 +73,13 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
+      */
+     public function getStorageRoot()
+     {
+-        return Mage::getConfig()->getOptions()->getMediaDir() . DS . Mage_Cms_Model_Wysiwyg_Config::IMAGE_DIRECTORY
+-            . DS;
++        if (!$this->_storageRoot) {
++            $this->_storageRoot = realpath(
++                    Mage::getConfig()->getOptions()->getMediaDir()
++                    . DS . Mage_Cms_Model_Wysiwyg_Config::IMAGE_DIRECTORY
++                ) . DS;
++        }
++        return $this->_storageRoot;
+     }
+ 
+     /**
+@@ -198,10 +208,10 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
+     {
+         if (!$this->_currentPath) {
+             $currentPath = $this->getStorageRoot();
+-            $path = $this->_getRequest()->getParam($this->getTreeNodeName());
+-            if ($path) {
+-                $path = $this->convertIdToPath($path);
+-                if (is_dir($path)) {
++            $node = $this->_getRequest()->getParam($this->getTreeNodeName());
++            if ($node) {
++                $path = realpath($this->convertIdToPath($node));
++                if (is_dir($path) && false !== stripos($path, $currentPath)) {
+                     $currentPath = $path;
+                 }
              }
+@@ -223,7 +233,7 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
+     public function getCurrentUrl()
+     {
+         if (!$this->_currentUrl) {
+-            $path = str_replace(Mage::getConfig()->getOptions()->getMediaDir(), '', $this->getCurrentPath());
++            $path = str_replace(realpath(Mage::getConfig()->getOptions()->getMediaDir()), '', $this->getCurrentPath());
+             $path = trim($path, DS);
+             $this->_currentUrl = Mage::app()->getStore($this->_storeId)->getBaseUrl('media') .
+                                  $this->convertPathToUrl($path) . '/';
+diff --git app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php
+index 19b3f45..af58ce3 100644
+--- app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php
++++ app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php
+@@ -89,7 +89,7 @@ class Mage_Cms_Model_Wysiwyg_Images_Storage extends Varien_Object
+         foreach ($collection as $key => $value) {
+             $rootChildParts = explode(DIRECTORY_SEPARATOR, substr($value->getFilename(), $storageRootLength));
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+-            if (array_key_exists($rootChildParts[0], $conditions['plain'])
++            if (array_key_exists(end($rootChildParts), $conditions['plain'])
+                 || ($regExp && preg_match($regExp, $value->getFilename()))) {
+                 $collection->removeItemByKey($key);
+             }

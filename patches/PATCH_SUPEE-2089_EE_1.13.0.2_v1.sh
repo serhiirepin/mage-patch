@@ -156,38 +156,41 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2089 | EE_1.13.0.2 | v1 | 1e195cb7b5792d36a615b076129709d57c6aa20f | Thu Sep 5 17:57:08 2013 -0700 | v1.13.0.2..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+diff --git app/code/core/Mage/Sitemap/Model/Sitemap.php app/code/core/Mage/Sitemap/Model/Sitemap.php
+index 2213a4f..734bb91 100644
+--- app/code/core/Mage/Sitemap/Model/Sitemap.php
++++ app/code/core/Mage/Sitemap/Model/Sitemap.php
+@@ -151,11 +151,13 @@ class Mage_Sitemap_Model_Sitemap extends Mage_Core_Model_Abstract
+          */
+         $changefreq = (string)Mage::getStoreConfig('sitemap/category/changefreq', $storeId);
+         $priority   = (string)Mage::getStoreConfig('sitemap/category/priority', $storeId);
++        $urlSuffix  = Mage::helper('catalog/category')->getCategoryUrlSuffix($storeId);
++        $urlSuffix  = ($urlSuffix) ? '.' . $urlSuffix : '';
+         $collection = Mage::getResourceModel('sitemap/catalog_category')->getCollection($storeId);
+         foreach ($collection as $item) {
+             $xml = sprintf(
+                 '<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>%s</changefreq><priority>%.1f</priority></url>',
+-                htmlspecialchars($baseUrl . $item->getUrl()),
++                htmlspecialchars($baseUrl . $item->getUrl() . $urlSuffix),
+                 $date,
+                 $changefreq,
+                 $priority
+@@ -169,11 +171,13 @@ class Mage_Sitemap_Model_Sitemap extends Mage_Core_Model_Abstract
+          */
+         $changefreq = (string)Mage::getStoreConfig('sitemap/product/changefreq', $storeId);
+         $priority   = (string)Mage::getStoreConfig('sitemap/product/priority', $storeId);
++        $urlSuffix  = Mage::helper('catalog/product')->getProductUrlSuffix($storeId);
++        $urlSuffix  = ($urlSuffix) ? '.' . $urlSuffix : '';
+         $collection = Mage::getResourceModel('sitemap/catalog_product')->getCollection($storeId);
+         foreach ($collection as $item) {
+             $xml = sprintf(
+                 '<url><loc>%s</loc><lastmod>%s</lastmod><changefreq>%s</changefreq><priority>%.1f</priority></url>',
+-                htmlspecialchars($baseUrl . $item->getUrl()),
++                htmlspecialchars($baseUrl . $item->getUrl() . $urlSuffix),
+                 $date,
+                 $changefreq,
+                 $priority

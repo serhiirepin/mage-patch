@@ -156,38 +156,23 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2458 | EE_1.13.0.1 | v1 | 49f71a8f9cd0ad34195d053f2d666b1b7b740de6 | Tue Nov 12 15:17:45 2013 -0800 | v1.13.0.1..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
+diff --git app/code/core/Mage/Rule/Model/Condition/Product/Abstract.php app/code/core/Mage/Rule/Model/Condition/Product/Abstract.php
+index b44a833..27bcf0d 100644
+--- app/code/core/Mage/Rule/Model/Condition/Product/Abstract.php
++++ app/code/core/Mage/Rule/Model/Condition/Product/Abstract.php
+@@ -120,7 +120,10 @@ abstract class Mage_Rule_Model_Condition_Product_Abstract extends Mage_Rule_Mode
+             $attribute = 'category_id';
+             $value     = $this->bindArrayOfIds($value);
          }
+-
++        if(!is_array($value) && in_array($operator, array('()', '!()'))) {
++            $value = explode(',', $value);
++            $value = array_map('trim', $value);
++        } 
+         /** @var $ruleResource Mage_Rule_Model_Resource_Rule_Condition_SqlBuilder */
+         $ruleResource = $this->getRuleResourceHelper();
  
-         if ($this->_errstr !== null || !$result) {

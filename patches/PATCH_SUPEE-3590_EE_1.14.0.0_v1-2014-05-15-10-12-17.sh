@@ -126,7 +126,7 @@ _apply_revert_patch() {
         DRY_RUN_FLAG=" --dry-run"
         echo "Checking if patch can be applied/reverted successfully..."
     fi
-    PATCH_APPLY_REVERT_RESULT=`$SED_BIN -e '1,/^__PATCHFILE_FOLLOWS__$/d' "$CURRENT_DIR""$BASE_NAME" | $PATCH_BIN $DRY_RUN_FLAG $REVERT_FLAG -p0`
+    PATCH_APPLY_REVERT_RESULT=`"$SED_BIN" -e '1,/^__PATCHFILE_FOLLOWS__$/d' "$CURRENT_DIR""$BASE_NAME" | "$PATCH_BIN" $DRY_RUN_FLAG $REVERT_FLAG -p0`
     PATCH_APPLY_REVERT_STATUS=$?
     if [ $PATCH_APPLY_REVERT_STATUS -eq 1 ] ; then
         echo -e "ERROR: Patch can't be applied/reverted successfully.\n\n$PATCH_APPLY_REVERT_RESULT"
@@ -156,38 +156,36 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-3590 | EE_1.14.0.0-DEV REMOTES/ORIGIN/EE-1.14.0.1 | v1 | 8e18e42a2f3f44159dae1ae616d2eb5ccfe6fa1b | Thu May 15 14:52:52 2014 +0300 | v1.14.0.0..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
+diff --git app/code/core/Mage/SalesRule/Model/Resource/Rule/Collection.php app/code/core/Mage/SalesRule/Model/Resource/Rule/Collection.php
+index 649a75e..bc979ef 100755
+--- app/code/core/Mage/SalesRule/Model/Resource/Rule/Collection.php
++++ app/code/core/Mage/SalesRule/Model/Resource/Rule/Collection.php
+@@ -95,7 +95,12 @@ class Mage_SalesRule_Model_Resource_Rule_Collection extends Mage_Rule_Model_Reso
+                     ),
+                     array('code')
                  );
+-            $select->where('main_table.coupon_type = ? ', Mage_SalesRule_Model_Rule::COUPON_TYPE_NO_COUPON);
++
++                $noCouponCondition = $connection->quoteInto(
++                    'main_table.coupon_type = ? ',
++                    Mage_SalesRule_Model_Rule::COUPON_TYPE_NO_COUPON
++                );
++
+                 $orWhereConditions = array(
+                     $connection->quoteInto(
+                         '(main_table.coupon_type = ? AND rule_coupons.type = 0)',
+@@ -111,7 +116,9 @@ class Mage_SalesRule_Model_Resource_Rule_Collection extends Mage_Rule_Model_Reso
+                     ),
+                 );
+                 $orWhereCondition = implode(' OR ', $orWhereConditions);
+-                $select->orWhere('(' . $orWhereCondition . ') AND rule_coupons.code = ?', $couponCode);
++                $select->where(
++                    $noCouponCondition . ' OR ((' . $orWhereCondition . ') AND rule_coupons.code = ?)', $couponCode
++                );
+             } else {
+                 $this->addFieldToFilter('main_table.coupon_type', Mage_SalesRule_Model_Rule::COUPON_TYPE_NO_COUPON);
              }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {

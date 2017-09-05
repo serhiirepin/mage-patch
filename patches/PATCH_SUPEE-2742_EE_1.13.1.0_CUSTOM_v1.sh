@@ -156,38 +156,57 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-2742 | EE_1.13.1.0 | CUSTOM v1 | 088f499313454a783a72b5ca7108d82fbd039825 | Thu Jan 9 16:46:23 2014 -0800 | v1.13.1.0..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
+diff --git app/code/core/Mage/Catalog/data/catalog_setup/data-upgrade-1.6.0.0.18.1.1-1.6.0.0.18.1.2.php app/code/core/Mage/Catalog/data/catalog_setup/data-upgrade-1.6.0.0.18.1.1-1.6.0.0.18.1.2.php
+new file mode 100644
+index 0000000..546e065
+--- /dev/null
++++ app/code/core/Mage/Catalog/data/catalog_setup/data-upgrade-1.6.0.0.18.1.1-1.6.0.0.18.1.2.php
+@@ -0,0 +1,30 @@
++<?php
++/**
++ * Magento Enterprise Edition
++ *
++ * NOTICE OF LICENSE
++ *
++ * This source file is subject to the Magento Enterprise Edition License
++ * that is bundled with this package in the file LICENSE_EE.txt.
++ * It is also available through the world-wide-web at this URL:
++ * http://www.magentocommerce.com/license/enterprise-edition
++ * If you did not receive a copy of the license and are unable to
++ * obtain it through the world-wide-web, please send an email
++ * to license@magentocommerce.com so we can send you a copy immediately.
++ *
++ * DISCLAIMER
++ *
++ * Do not edit or add to this file if you wish to upgrade Magento to newer
++ * versions in the future. If you wish to customize Magento for your
++ * needs please refer to http://www.magentocommerce.com for more information.
++ *
++ * @category    Enterprise
++ * @package     Enterprise_Catalog
++ * @copyright   Copyright (c) 2013 Magento Inc. (http://www.magentocommerce.com)
++ * @license     http://www.magentocommerce.com/license/enterprise-edition
++ */
++/**
++ * @var $this Mage_Catalog_Model_Resource_Setup
++ */
++$productUrlKeyTableName = array('catalog/product', 'url_key');
++$this->getConnection()->delete($this->getTable($productUrlKeyTableName), array('store_id = ?' => 1));
+\ No newline at end of file
+diff --git app/code/core/Mage/Catalog/etc/config.xml app/code/core/Mage/Catalog/etc/config.xml
+index db1227c..9abcf15 100644
+--- app/code/core/Mage/Catalog/etc/config.xml
++++ app/code/core/Mage/Catalog/etc/config.xml
+@@ -28,7 +28,7 @@
+ <config>
+     <modules>
+         <Mage_Catalog>
+-            <version>1.6.0.0.18</version>
++            <version>1.6.0.0.18.1.2</version>
+         </Mage_Catalog>
+     </modules>
+     <admin>

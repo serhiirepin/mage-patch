@@ -156,38 +156,74 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-7405 | EE_1.13.0.1 | v1.1 | 36149bbc7f562cb025f5facc9d7bf70fc4f52a61 | Fri Feb 5 12:25:37 2016 +0200 | d113e369ffb9474bab47b11a89332fb91a175d6b..36149bbc7f562cb025f5facc9d7bf70fc4f52a61
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
-             }
+diff --git app/code/core/Mage/Adminhtml/Helper/Sales.php app/code/core/Mage/Adminhtml/Helper/Sales.php
+index cd7379f..a33af49 100644
+--- app/code/core/Mage/Adminhtml/Helper/Sales.php
++++ app/code/core/Mage/Adminhtml/Helper/Sales.php
+@@ -121,7 +121,7 @@ class Mage_Adminhtml_Helper_Sales extends Mage_Core_Helper_Abstract
+     public function escapeHtmlWithLinks($data, $allowedTags = null)
+     {
+         if (!empty($data) && is_array($allowedTags) && in_array('a', $allowedTags)) {
+-            $links = [];
++            $links = array();
+             $i = 1;
+             $regexp = "/<a\s[^>]*href\s*?=\s*?([\"\']??)([^\" >]*?)\\1[^>]*>(.*)<\/a>/siU";
+             while (preg_match($regexp, $data, $matches)) {
+diff --git app/code/core/Mage/Core/Model/Config.php app/code/core/Mage/Core/Model/Config.php
+index b13d006..9f4e541 100644
+--- app/code/core/Mage/Core/Model/Config.php
++++ app/code/core/Mage/Core/Model/Config.php
+@@ -1642,9 +1642,9 @@ class Mage_Core_Model_Config extends Mage_Core_Model_Config_Base
+      * Makes all events to lower-case
+      *
+      * @param string $area
+-     * @param Mage_Core_Model_Config_Base $mergeModel
++     * @param Varien_Simplexml_Config $mergeModel
+      */
+-    protected function _makeEventsLowerCase($area, Mage_Core_Model_Config_Base $mergeModel)
++    protected function _makeEventsLowerCase($area, Varien_Simplexml_Config $mergeModel)
+     {
+         $events = $mergeModel->getNode($area . "/" . Mage_Core_Model_App_Area::PART_EVENTS);
+         if ($events !== false) {
+diff --git app/code/core/Mage/Sales/Model/Quote/Item.php app/code/core/Mage/Sales/Model/Quote/Item.php
+index 2e6726a..b1e8047 100644
+--- app/code/core/Mage/Sales/Model/Quote/Item.php
++++ app/code/core/Mage/Sales/Model/Quote/Item.php
+@@ -495,8 +495,9 @@ class Mage_Sales_Model_Quote_Item extends Mage_Sales_Model_Quote_Item_Abstract
+                             $itemOptionValue = $_itemOptionValue;
+                             $optionValue = $_optionValue;
+                             // looks like it does not break bundle selection qty
+-                            unset($itemOptionValue['qty'], $itemOptionValue['uenc']);
+-                            unset($optionValue['qty'], $optionValue['uenc']);
++                            foreach (array('qty', 'uenc', 'form_key') as $key) {
++                                unset($itemOptionValue[$key], $optionValue[$key]);
++                            }
+                         }
  
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
-+            }
+                     } catch (Exception $e) {
+diff --git lib/Varien/File/Uploader.php lib/Varien/File/Uploader.php
+index 06aa613..5cb18ca 100644
+--- lib/Varien/File/Uploader.php
++++ lib/Varien/File/Uploader.php
+@@ -216,7 +216,7 @@ class Varien_File_Uploader
+         $this->_result = $this->_moveFile($this->_file['tmp_name'], $destinationFile);
+ 
+         if ($this->_result) {
+-            chmod($destinationFile, 0640);
++            chmod($destinationFile, 0666);
+             if ($this->_enableFilesDispersion) {
+                 $fileName = str_replace(DIRECTORY_SEPARATOR, '/',
+                     self::_addDirSeparator($this->_dispretionPath)) . $fileName;
+@@ -538,7 +538,7 @@ class Varien_File_Uploader
+             $destinationFolder = substr($destinationFolder, 0, -1);
          }
  
-         if ($this->_errstr !== null || !$result) {
+-        if (!(@is_dir($destinationFolder) || @mkdir($destinationFolder, 0750, true))) {
++        if (!(@is_dir($destinationFolder) || @mkdir($destinationFolder, 0777, true))) {
+             throw new Exception("Unable to create directory '{$destinationFolder}'.");
+         }
+         return $this;

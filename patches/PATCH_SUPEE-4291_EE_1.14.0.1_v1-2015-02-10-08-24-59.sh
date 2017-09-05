@@ -156,38 +156,33 @@ echo -e "$APPLIED_REVERTED_PATCH_INFO\n$PATCH_APPLY_REVERT_RESULT\n\n" >> "$APPL
 
 exit 0
 
-SUPEE-9652 | EE_1.14.3.1 | v1 | 4038f0785d828794083f53f10c01aaa6af403523 | Tue Jan 24 15:03:12 2017 +0200 | 9586981e6ca8b255014b242d50b68b88525b0754..4038f0785d828794083f53f10c01aaa6af403523
+
+SUPEE-4291 | EE_1.14.0.1 | v1 | 1fdfe63a44cde9ad7f7b9a6afe228e55d579a499 | Tue Sep 2 17:58:21 2014 +0300 | v1.14.0.1..HEAD
 
 __PATCHFILE_FOLLOWS__
-diff --git lib/Zend/Mail/Transport/Sendmail.php lib/Zend/Mail/Transport/Sendmail.php
-index b24026b..9323f58 100644
---- lib/Zend/Mail/Transport/Sendmail.php
-+++ lib/Zend/Mail/Transport/Sendmail.php
-@@ -119,14 +119,19 @@ class Zend_Mail_Transport_Sendmail extends Zend_Mail_Transport_Abstract
-                 );
+diff --git app/code/core/Mage/Usa/Model/Shipping/Carrier/Usps.php app/code/core/Mage/Usa/Model/Shipping/Carrier/Usps.php
+index 52dd12e..3767de9 100644
+--- app/code/core/Mage/Usa/Model/Shipping/Carrier/Usps.php
++++ app/code/core/Mage/Usa/Model/Shipping/Carrier/Usps.php
+@@ -340,6 +340,10 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
+             if ($r->getService() == 'FIRST CLASS' || $r->getService() == 'FIRST CLASS HFP COMMERCIAL') {
+                 $package->addChild('FirstClassMailType', 'PARCEL');
              }
- 
--            set_error_handler(array($this, '_handleMailErrors'));
--            $result = mail(
--                $this->recipients,
--                $this->_mail->getSubject(),
--                $this->body,
--                $this->header,
--                $this->parameters);
--            restore_error_handler();
-+            // Sanitize the From header
-+            if (!Zend_Validate::is(str_replace(' ', '', $this->parameters), 'EmailAddress')) {
-+                throw new Zend_Mail_Transport_Exception('Potential code injection in From header');
-+            } else {
-+                set_error_handler(array($this, '_handleMailErrors'));
-+                $result = mail(
-+                    $this->recipients,
-+                    $this->_mail->getSubject(),
-+                    $this->body,
-+                    $this->header,
-+                    $this->parameters);
-+                restore_error_handler();
++            if ($r->getService() == 'FIRST CLASS COMMERCIAL') {
++                $package->addChild('FirstClassMailType', 'PACKAGE SERVICE');
 +            }
-         }
- 
-         if ($this->_errstr !== null || !$result) {
++
+             $package->addChild('ZipOrigination', $r->getOrigPostal());
+             //only 5 chars available
+             $package->addChild('ZipDestination', substr($r->getDestPostal(), 0, 5));
+@@ -535,8 +539,8 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
+                  '2'      => Mage::helper('usa')->__('Priority Mail Express Hold For Pickup'),
+                  '3'      => Mage::helper('usa')->__('Priority Mail Express'),
+                  '4'      => Mage::helper('usa')->__('Standard Post'),
+-                 '6'      => Mage::helper('usa')->__('Media Mail'),
+-                 '7'      => Mage::helper('usa')->__('Library Mail'),
++                 '6'      => Mage::helper('usa')->__('Media Mail Parcel'),
++                 '7'      => Mage::helper('usa')->__('Library Mail Parcel'),
+                  '13'     => Mage::helper('usa')->__('Priority Mail Express Flat Rate Envelope'),
+                  '15'     => Mage::helper('usa')->__('First-Class Mail Large Postcards'),
+                  '16'     => Mage::helper('usa')->__('Priority Mail Flat Rate Envelope'),
