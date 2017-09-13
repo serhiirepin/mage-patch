@@ -268,7 +268,7 @@ class PatchMage {
                 continue;
             }
             
-            echo 'Apply patch file: '.$patchFile.PHP_EOL;
+            echo PHP_EOL.'Apply patch file: '.$patchFile.PHP_EOL;
             
             $this->_downloadPatch($dir, $patchFile);
             
