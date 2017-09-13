@@ -250,16 +250,12 @@ class PatchMage {
         echo $dir.':'.PHP_EOL;
         
         list($mageEdition, $mageVersion) = $this->getMagentoVersion($dir);
-        //$mageVersion = '1.5.1.0';
-        
+
         echo 'Magento version: '.$mageEdition.' '.$mageVersion.PHP_EOL;
         
         $appliedPatches = array();
         
         $patches = $this->_getAvailablePathList($mageEdition);
-        // echo '<pre>';
-        // echo print_r($patches);
-        // echo '</pre>';
         if ($this->_allowedPatches) {
             $patches = array_intersect_key($patches, array_flip($this->_allowedPatches));
         }
@@ -281,7 +277,7 @@ class PatchMage {
                 $appliedPatches[] = $patch;
             } catch (Exception $e) {
                 if ($this->_continueOnError) {
-                    echo PHP_EOL."Error applying the patch ".$patch.PHP_EOL;
+                    echo "Error applying the patch ".$patch.PHP_EOL;
                 }
             }
             
