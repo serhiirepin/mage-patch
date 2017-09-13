@@ -267,7 +267,7 @@ class PatchMage {
                 echo 'The patch '.$patch.' is not available for version '.$mageVersion.PHP_EOL;
                 continue;
             }
-            echo PHP_EOL;
+            echo '1234';
             echo PHP_EOL.'Apply patch file: '.$patchFile.PHP_EOL;
             
             $this->_downloadPatch($dir, $patchFile);
