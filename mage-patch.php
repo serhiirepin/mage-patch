@@ -3,7 +3,8 @@
 if (version_compare(phpversion(), '5.3.0', '<')) {
     die('PHP version must be at least 5.3.0');
 }
-
+require_once 'Download.php';
+require_once 'Colors.php';
 class PatchMage {
     
     protected $_patchData;
@@ -14,12 +15,17 @@ class PatchMage {
     protected $_dryRun = false;
     protected $_keepDownloadedPatch = false;
     protected $_quiet = false;
+    protected $downloader;
     
     public function __construct($jsonConfigUrl = null)
     {
-        $this->_loadJsonData($jsonConfigUrl);
+//        $this->_loadJsonData($jsonConfigUrl);
+
     }
-    
+
+    /*
+     * @deprecated
+     */
     protected function _loadJsonData($url = null)
     {
         if (!$url) {
@@ -245,6 +251,8 @@ class PatchMage {
     
     public function patch ($dir)
     {
+        $this->downloader = new Downloader($dir);
+
         $dir = rtrim($dir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
         
         echo $dir.':'.PHP_EOL;
@@ -259,7 +267,8 @@ class PatchMage {
         if ($this->_allowedPatches) {
             $patches = array_intersect_key($patches, array_flip($this->_allowedPatches));
         }
-        
+        $this->downloader->downloadPatch($mageVersion);
+        die;
         foreach ($patches as $patch => $patchVersions) {
             $patchFile = $this->_getPatchFile($patchVersions, $mageVersion);
             
