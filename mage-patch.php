@@ -3,8 +3,9 @@
 if (version_compare(phpversion(), '5.3.0', '<')) {
     die('PHP version must be at least 5.3.0');
 }
-require_once 'Download.php';
-require_once 'Colors.php';
+require_once dirname(__FILE__). '/Download.php';
+require_once dirname(__FILE__). '/Colors.php';
+
 class PatchMage {
     
     protected $_patchData;
